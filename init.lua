@@ -54,7 +54,14 @@ vim.o.confirm = true
 --  See `:help vim.keymap.set()`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>') -- Clear highlights on search when pressing <Esc> in normal mode
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' }) -- Diagnostic keymaps
-
+vim.keymap.set( -- InlayHints
+  'n',
+  '<leader>i',
+  function()
+    vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { 0 }, { 0 })
+  end,
+  { desc = 'Display inlay hints' }
+)
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -471,7 +478,13 @@ require('lazy').setup({
         -- But for many setups, the LSP (`ts_ls`) will work just fine
         -- ts_ls = {},
         --
-        phpactor = {},
+        phpactor = {
+          init_options = {
+            ['language_server_worse_reflection.inlay_hints.enable'] = true,
+            ['language_server_worse_reflection.inlay_hints.types'] = true,
+            ['language_server_worse_reflection.inlay_hints.params'] = true,
+          },
+        },
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -486,20 +499,12 @@ require('lazy').setup({
             },
           },
         },
-        emmet_ls = {
+        emmet_language_server = {
           filetypes = {
             'html',
             'css',
             'javascript',
-            'javascriptreact',
             'typescript',
-            'typescriptreact',
-            'vue',
-            'svelte',
-            'xml',
-            'xsl',
-            'pug',
-            'markdown',
             'twig',
           },
         },
@@ -573,15 +578,7 @@ require('lazy').setup({
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        php = {
-          command = 'php-cs-fixer',
-          args = {
-            'fix',
-            '--using-cache=no',
-            '$FILENAME',
-          },
-          stdin = false,
-        },
+        php = { 'php_cs_fixer' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
