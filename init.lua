@@ -1,7 +1,5 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-
--- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
@@ -40,10 +38,11 @@ vim.o.splitbelow = true
 --   and `:help lua-options-guide`
 vim.o.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+vim.opt.termguicolors = true
 
 vim.o.inccommand = 'split' -- Preview substitutions live, as you type!
 vim.o.cursorline = true -- Show which line your cursor is on
-vim.o.scrolloff = 20 -- Minimal number of screen lines to keep above and below the cursor.
+vim.o.scrolloff = 10 -- Minimal number of screen lines to keep above and below the cursor.
 
 -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s)
@@ -90,6 +89,9 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
 -- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
 
+vim.keymap.set('n', '<A-j>', 'ddp', { desc = 'Move line content one down' })
+vim.keymap.set('n', '<A-k>', 'ddkP', { desc = 'Move line content one up' })
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -119,6 +121,21 @@ end
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
 
+-- Configure emmet for twig files
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'twig',
+  callback = function()
+    vim.bo.syntax = 'html'
+  end,
+  desc = 'Use HTML syntax for Twig files',
+})
+
+-- Creates missing directory on save
+vim.api.nvim_create_autocmd('BufWritePre', {
+  callback = function()
+    vim.fn.mkdir(vim.fn.expand '<afile>:p:h', 'p')
+  end,
+})
 -- [[ Configure and install plugins ]]
 --  To check the current status of your plugins, run
 --    :Lazy
@@ -502,11 +519,34 @@ require('lazy').setup({
         emmet_language_server = {
           filetypes = {
             'html',
-            'css',
             'javascript',
             'typescript',
             'twig',
           },
+          init_options = {
+            includeLanguages = {
+              twig = 'html',
+            },
+            preferences = {},
+            showExpandedAbbreviation = 'always',
+            showAbbreviationSuggestions = true,
+            showSuggestionsAsSnippets = false,
+          },
+        },
+        twiggy_language_server = {
+          settings = {
+            twiggy = {
+              framework = 'symfony',
+              phpExecutable = 'php-legacy',
+              symfonyConsolePath = 'bin/console',
+            },
+          },
+        },
+        html = {
+          filetypes = { 'twig', 'html' },
+        },
+        cssmodules_ls = {
+          on_attach = custom_on_attach,
         },
       }
 
@@ -525,7 +565,8 @@ require('lazy').setup({
       -- for you, so that they are available from within Neovim.
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
+        'stylua',
+        'emmet_language_server', -- Used to format Lua code
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -755,7 +796,7 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'twig' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -790,6 +831,11 @@ require('lazy').setup({
       'nvim-tree/nvim-web-devicons',
     },
   },
+  {
+    'pmizio/typescript-tools.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
+    opts = {},
+  },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
@@ -812,7 +858,9 @@ require('lazy').setup({
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   { import = 'custom.plugins' },
-  --
+  { 'rzwo2/neo-symfony.nvim' },
+  { 'duane9/nvim-rg' },
+  { 'mfussenegger/nvim-dap' },
   -- For additional information with loading, sourcing and examples see `:help lazy.nvim-🔌-plugin-spec`
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
